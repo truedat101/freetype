@@ -72,6 +72,11 @@
 
 cmake_minimum_required(VERSION 2.6)
 
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/Dinno/hunter/archive/issue-277.tar.gz"
+    SHA1 "b0438586782800a47ae3c6ae3c0ef627e1b27c36"
+)
 
 include(CheckIncludeFile)
 
@@ -111,7 +116,7 @@ else ()
 endif ()
 
 
-project(freetype)
+project(freetype VERSION 2.6.2)
 
 
 if (WIN32 AND NOT MINGW AND BUILD_SHARED_LIBS)
@@ -146,36 +151,47 @@ if (BUILD_FRAMEWORK)
   set(BUILD_SHARED_LIBS ON)
 endif ()
 
-
-set(VERSION_MAJOR "2")
-set(VERSION_MINOR "6")
-set(VERSION_PATCH "2")
-
-set(PROJECT_VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
-set(SHARED_LIBRARY_VERSION ${VERSION_MAJOR}.${VERSION_MINOR})
+set(PROJECT_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH})
+set(SHARED_LIBRARY_VERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR})
 
 
 # Compiler definitions for building the library
 add_definitions(-DFT2_BUILD_LIBRARY)
 
-
 # Find dependencies
-foreach (d ZLIB BZip2 PNG HarfBuzz)
-  string(TOUPPER "${d}" D)
 
-  if (DEFINED WITH_${d} OR DEFINED WITH_${D})
-    if (WITH_${d} OR WITH_${D})
-      find_package(${d} QUIET REQUIRED)
+macro(add_package package use_hunter)
+  string(TOUPPER "${package}" PACKAGE)
+  if (DEFINED WITH_${package} OR DEFINED WITH_${PACKAGE})
+    if (WITH_${package} OR WITH_${PACKAGE})
+      if(${use_hunter})
+        hunter_add_package(${package})
+        find_package(${package} REQUIRED CONFIG)
+      else()
+        find_package(${package} QUIET REQUIRED)
+      endif()
     endif ()
   else ()
-    find_package(${d} QUIET)
+    # Logic of using package only in case when it sits somwhere in searched directories is not
+    # very good, and though initially I tried to preserve it, finally I decided to remove it because:
+    #  1. AFAIK Hunter can not report presence or absence of packages, so I had to use find_package alone
+    #  2. Hunter has it's own implementation of find modules, and looks like implementation for ZLIB 
+    #     does not implement QUIET mode.
+    #find_package(${package} QUIET)
   endif ()
 
-  if (${d}_FOUND OR ${D}_FOUND)
-    message(STATUS "Building with ${d}")
+  if (${package}_FOUND OR ${PACKAGE}_FOUND)
+    message(STATUS "Building with ${package}")
   endif()
-endforeach ()
+endmacro()
 
+# Packages which are already hunterized we add using Hunter
+add_package(ZLIB 1)
+add_package(BZip2 1)
+add_package(PNG 1)
+
+# Harf Buzz is not hunterized yet
+add_package(HarfBuzz 0)
 
 message(STATUS
   "Creating directory ${PROJECT_BINARY_DIR}/include/freetype/config")
@@ -363,17 +379,13 @@ else ()
 endif ()
 
 if (ZLIB_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} ${ZLIB_LIBRARIES})
-  include_directories(${ZLIB_INCLUDE_DIRS})
+  target_link_libraries(freetype ${MAYBE_PRIVATE} ZLIB::zlib)
 endif ()
-if (BZIP2_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} ${BZIP2_LIBRARIES})
-  include_directories(${BZIP2_INCLUDE_DIR}) # not BZIP2_INCLUDE_DIRS
+if (BZip2_FOUND)
+  target_link_libraries(freetype ${MAYBE_PRIVATE} BZip2::bz2)
 endif ()
 if (PNG_FOUND)
-  add_definitions(${PNG_DEFINITIONS})
-  target_link_libraries(freetype ${MAYBE_PRIVATE} ${PNG_LIBRARIES})
-  include_directories(${PNG_INCLUDE_DIRS})
+  target_link_libraries(freetype ${MAYBE_PRIVATE} PNG::png)
 endif ()
 if (HARFBUZZ_FOUND)
   target_link_libraries(freetype ${MAYBE_PRIVATE} ${HARFBUZZ_LIBRARIES})
@@ -383,6 +395,13 @@ endif ()
 
 # Installations
 # Note the trailing slash in the argument to the `DIRECTORY' directive
+set(config_install_dir "lib/cmake/${PROJECT_NAME}")
+set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+set(targets_export_name "${PROJECT_NAME}Targets")
+set(namespace "${PROJECT_NAME}::")
+
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/
   DESTINATION include/freetype2
   PATTERN "internal" EXCLUDE
@@ -395,23 +414,44 @@ install(FILES
   DESTINATION include/freetype2/freetype/config
 )
 install(TARGETS freetype
-  EXPORT freetype-targets
+  EXPORT "${targets_export_name}"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib
+  #INCLUDES DESTINATION include
   FRAMEWORK DESTINATION Library/Frameworks
 )
-install(EXPORT freetype-targets
-  DESTINATION lib/cmake/freetype
-  FILE freetype-config.cmake
+
+include(CMakePackageConfigHelpers)
+
+write_basic_package_version_file(
+    "${version_config}" COMPATIBILITY AnyNewerVersion
+)
+
+# Use 'targets_export_name'
+configure_package_config_file(
+    "cmake/Config.cmake.in"
+    "${project_config}"
+    INSTALL_DESTINATION "${config_install_dir}"
+)
+
+install(
+    FILES "${project_config}" "${version_config}"
+    DESTINATION "${config_install_dir}"
+)
+
+install(
+    EXPORT "${targets_export_name}"
+    NAMESPACE "${namespace}"
+    DESTINATION "${config_install_dir}"
 )
 
 
 # Packaging
 # CPack version numbers for release tarball name.
-set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${VERSION_PATCH}})
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH}})
 if (NOT DEFINED CPACK_PACKAGE_DESCRIPTION_SUMMARY)
   set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "${CMAKE_PROJECT_NAME}")
 endif ()
