@@ -70,12 +70,12 @@
 #     cmake ... -DWITH_ZLIB=ON -DWITH_HarfBuzz=OFF ...
 
 
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 3.0)
 
 include("cmake/HunterGate.cmake")
 HunterGate(
-    URL "https://github.com/Dinno/hunter/archive/issue-277.tar.gz"
-    SHA1 "b0438586782800a47ae3c6ae3c0ef627e1b27c36"
+    URL "https://github.com/ruslo/hunter/archive/v0.12.33.tar.gz"
+    SHA1 "f64eda11326e12d84b6aa7f4aed80c09c182aa64"
 )
 
 include(CheckIncludeFile)
@@ -247,7 +247,7 @@ if (ZLIB_FOUND)
     "/\\* +(#define +FT_CONFIG_OPTION_SYSTEM_ZLIB) +\\*/" "\\1"
     FTOPTION_H "${FTOPTION_H}")
 endif ()
-if (BZIP2_FOUND)
+if (BZip2_FOUND)
   string(REGEX REPLACE
     "/\\* +(#define +FT_CONFIG_OPTION_USE_BZIP2) +\\*/" "\\1"
     FTOPTION_H "${FTOPTION_H}")
@@ -367,28 +367,21 @@ if (BUILD_FRAMEWORK)
   )
 endif ()
 
-if (NOT CMAKE_VERSION VERSION_LESS 2.8.11)
-  target_include_directories(freetype
-    PUBLIC $<INSTALL_INTERFACE:include/freetype2>)
-endif ()
-
-if (CMAKE_VERSION VERSION_LESS 2.8.12)
-  set(MAYBE_PRIVATE "")
-else ()
-  set(MAYBE_PRIVATE "PRIVATE")
-endif ()
+target_include_directories(freetype
+   PUBLIC $<INSTALL_INTERFACE:include/freetype2>
+   )
 
 if (ZLIB_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} ZLIB::zlib)
+  target_link_libraries(freetype PRIVATE ZLIB::zlib)
 endif ()
 if (BZip2_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} BZip2::bz2)
+  target_link_libraries(freetype PRIVATE BZip2::bz2)
 endif ()
 if (PNG_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} PNG::png)
+  target_link_libraries(freetype PRIVATE PNG::png)
 endif ()
 if (HARFBUZZ_FOUND)
-  target_link_libraries(freetype ${MAYBE_PRIVATE} ${HARFBUZZ_LIBRARIES})
+  target_link_libraries(freetype PRIVATE ${HARFBUZZ_LIBRARIES})
   include_directories(${HARFBUZZ_INCLUDE_DIRS})
 endif ()
 
