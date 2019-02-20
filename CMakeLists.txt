@@ -192,6 +192,9 @@ else ()
   find_package(HarfBuzz 1.3.0)
 endif ()
 
+# Do not call 'hunter_add_package(harfbuzz)', harfbuzz depends on freetype!
+set(HARFBUZZ_FOUND FALSE)
+
 if (FT_WITH_PNG)
   find_package(PNG REQUIRED)
 else ()
