@@ -138,6 +138,8 @@ set(VERSION_MAJOR "2")
 set(VERSION_MINOR "9")
 set(VERSION_PATCH "1")
 
+set(PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
+
 # SOVERSION scheme: CURRENT.AGE.REVISION
 #   If there was an incompatible interface change:
 #     Increment CURRENT. Set AGE and REVISION to 0
@@ -499,8 +501,47 @@ if (NOT SKIP_INSTALL_LIBRARIES AND NOT SKIP_INSTALL_ALL)
   install(
     EXPORT freetype-targets
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/freetype
-      FILE freetype-config.cmake
+      NAMESPACE "freetype::"
       COMPONENT headers)
+
+  ### Installation (https://github.com/forexample/package-example) {
+
+  # Introduce variables:
+  # * CMAKE_INSTALL_LIBDIR
+  # * CMAKE_INSTALL_BINDIR
+  # * CMAKE_INSTALL_INCLUDEDIR
+  include(GNUInstallDirs)
+
+  set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/freetype")
+  set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+  set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+  set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
+  set(TARGETS_EXPORT_NAME freetype-targets)
+  set(NAMESPACE "freetype::")
+
+  include(CMakePackageConfigHelpers)
+
+  # Use:
+  # * PROJECT_VERSION
+  write_basic_package_version_file(
+      "${version_config}" COMPATIBILITY SameMajorVersion
+  )
+
+  # Use:
+  # * TARGETS_EXPORT_NAME
+  # * PROJECT_NAME
+  configure_package_config_file(
+      "cmake/template/Config.cmake.in"
+      "${project_config}"
+      INSTALL_DESTINATION "${config_install_dir}"
+  )
+
+  install(
+      FILES "${project_config}" "${version_config}"
+      DESTINATION "${config_install_dir}"
+  )
+
+  # }
 endif ()
 
 
