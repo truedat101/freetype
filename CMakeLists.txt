@@ -83,6 +83,12 @@
 # starting with 2.8.12.
 cmake_minimum_required(VERSION 3.2)
 
+include("cmake/HunterGate.cmake")
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.23.112.tar.gz"
+    SHA1 "4b894e1d5d203f0cc9a77431dbb1b486ab6f4430"
+)
+
 if (NOT CMAKE_VERSION VERSION_LESS 3.3)
   # Allow symbol visibility settings also on static libraries. CMake < 3.3
   # only sets the propery on a shared library build.
