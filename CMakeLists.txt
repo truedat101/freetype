@@ -232,34 +232,31 @@ else ()
 endif ()
 
 # Create the configuration file
-if (UNIX)
-  check_include_file("unistd.h" HAVE_UNISTD_H)
-  check_include_file("fcntl.h" HAVE_FCNTL_H)
-  check_include_file("stdint.h" HAVE_STDINT_H)
+check_include_file("unistd.h" HAVE_UNISTD_H)
+check_include_file("fcntl.h" HAVE_FCNTL_H)
+check_include_file("stdint.h" HAVE_STDINT_H)
 
-  file(READ "${PROJECT_SOURCE_DIR}/builds/unix/ftconfig.in"
-    FTCONFIG_H)
-  if (HAVE_UNISTD_H)
-    string(REGEX REPLACE
-      "#undef +(HAVE_UNISTD_H)" "#define \\1 1"
-      FTCONFIG_H "${FTCONFIG_H}")
-  endif ()
-  if (HAVE_FCNTL_H)
-    string(REGEX REPLACE
-      "#undef +(HAVE_FCNTL_H)" "#define \\1 1"
-      FTCONFIG_H "${FTCONFIG_H}")
-  endif ()
-  if (HAVE_STDINT_H)
-    string(REGEX REPLACE
-      "#undef +(HAVE_STDINT_H)" "#define \\1 1"
-      FTCONFIG_H "${FTCONFIG_H}")
-  endif ()
-  string(REPLACE "/undef " "#undef "
+file(READ "${PROJECT_SOURCE_DIR}/builds/unix/ftconfig.in"
+  FTCONFIG_H)
+if (HAVE_UNISTD_H)
+  string(REGEX REPLACE
+    "#undef +(HAVE_UNISTD_H)" "#define \\1 1"
     FTCONFIG_H "${FTCONFIG_H}")
-  file(WRITE "${PROJECT_BINARY_DIR}/include/freetype/config/ftconfig.h"
-    "${FTCONFIG_H}")
 endif ()
-
+if (HAVE_FCNTL_H)
+  string(REGEX REPLACE
+    "#undef +(HAVE_FCNTL_H)" "#define \\1 1"
+    FTCONFIG_H "${FTCONFIG_H}")
+endif ()
+if (HAVE_STDINT_H)
+  string(REGEX REPLACE
+    "#undef +(HAVE_STDINT_H)" "#define \\1 1"
+    FTCONFIG_H "${FTCONFIG_H}")
+endif ()
+string(REPLACE "/undef " "#undef "
+  FTCONFIG_H "${FTCONFIG_H}")
+file(WRITE "${PROJECT_BINARY_DIR}/include/freetype/config/ftconfig.h"
+  "${FTCONFIG_H}")
 
 # Create the options file
 file(READ "${PROJECT_SOURCE_DIR}/include/freetype/config/ftoption.h"
