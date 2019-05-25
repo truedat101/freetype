@@ -14,3 +14,12 @@ endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
 check_required_components("@PROJECT_NAME@")
+
+if(NOT TARGET Freetype::Freetype)
+  set_target_properties(
+      freetype::freetype
+      PROPERTIES
+      IMPORTED_GLOBAL True
+  )
+  add_library(Freetype::Freetype ALIAS freetype::freetype)
+endif()
