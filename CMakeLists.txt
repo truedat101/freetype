@@ -84,6 +84,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 include("cmake/HunterGate.cmake")
+
 HunterGate(
     URL "https://github.com/ruslo/hunter/archive/v0.23.112.tar.gz"
     SHA1 "4b894e1d5d203f0cc9a77431dbb1b486ab6f4430"
@@ -358,6 +359,8 @@ add_library(freetype
   ${PRIVATE_HEADERS}
   ${BASE_SRCS}
 )
+# https://stackoverflow.com/a/39196305
+set_property(TARGET freetype PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 set_target_properties(
   freetype PROPERTIES
